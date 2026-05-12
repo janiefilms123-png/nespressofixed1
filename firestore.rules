@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Auth Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // User Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) 
+                    && isValidId(userId)
+                    && request.resource.data.keys().hasAll(['uid', 'email', 'createdAt'])
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.createdAt == request.time;
+      allow update: if isOwner(userId)
+                    && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.email == resource.data.email
+                    && request.resource.data.updatedAt == request.time
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'phoneNumber', 'address', 'updatedAt']);
+    }
+
+    // Review Rules
+    match /reviews/{reviewId} {
+      allow list: if true;
+      allow get: if true;
+      allow create: if isSignedIn()
+                    && isValidId(reviewId)
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+                    && request.resource.data.comment is string && request.resource.data.comment.size() <= 1000
+                    && (!('productId' in request.resource.data) || isValidId(request.resource.data.productId));
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Order Rules
+    match /orders/{orderId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.status == 'completed'
+                    && request.resource.data.totalAmount is number
+                    && request.resource.data.items is list;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}
