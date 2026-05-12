@@ -9,7 +9,7 @@ import { Play, Coffee, Sparkles } from 'lucide-react';
 
 export default function VideoShowcase() {
   return (
-    <section className="py-32 bg-brand-brown relative overflow-hidden group/showcase">
+    <section className="py-16 bg-brand-brown relative overflow-hidden group/showcase">
       {/* Immersive background effects */}
       <div className="absolute inset-0 opacity-40">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-brand-gold blur-[140px] rounded-full animate-pulse" />
@@ -17,14 +17,14 @@ export default function VideoShowcase() {
       </div>
 
       <div className="container mx-auto px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-24 items-center">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="space-y-12"
+            className="space-y-8"
           >
-            <div className="space-y-8">
+            <div className="space-y-6">
               <div className="inline-flex items-center gap-3 px-5 py-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-brand-gold text-[10px] font-bold uppercase tracking-[0.3em]">
                 <Sparkles size={12} className="shrink-0" />
                 The Cinematic Ritual
@@ -39,7 +39,7 @@ export default function VideoShowcase() {
               </p>
             </div>
 
-            <div className="flex items-center gap-12 pt-12 border-t border-white/10">
+            <div className="flex items-center gap-12 pt-8 border-t border-white/10">
               <div className="space-y-1">
                 <div className="text-5xl font-serif text-white font-bold tracking-tighter">19 Bar</div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-gold/60">Pressure</div>
