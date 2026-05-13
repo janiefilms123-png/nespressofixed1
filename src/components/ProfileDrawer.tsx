@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, User, Settings, Package, Heart, LogIn, ArrowRight, Info, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface ProfileDrawerProps {
@@ -91,16 +92,17 @@ export default function ProfileDrawer({ isOpen, onClose }: ProfileDrawerProps) {
 
               <div className="space-y-2">
                 {!user ? (
-                  <button 
-                    onClick={() => signIn()}
+                  <Link 
+                    to="/login"
+                    onClick={onClose}
                     className="w-full flex items-center justify-between p-4 bg-brand-cream rounded-2xl transition-all group"
                   >
                     <div className="flex items-center gap-4">
                       <LogIn size={20} className="text-brand-gold" />
-                      <span className="font-bold text-brand-brown">Sign In with Google</span>
+                      <span className="font-bold text-brand-brown">Sign In to Your Ritual</span>
                     </div>
                     <ArrowRight size={16} className="text-brand-gold" />
-                  </button>
+                  </Link>
                 ) : (
                   <>
                     {[
