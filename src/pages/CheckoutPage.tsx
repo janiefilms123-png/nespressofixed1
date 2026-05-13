@@ -25,7 +25,6 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -35,24 +34,6 @@ export default function CheckoutPage() {
     zipCode: '',
     country: 'United States'
   });
-
-  if (cart.length === 0 && !isSuccess) {
-    return (
-      <div className="pt-32 min-h-screen bg-white flex flex-col items-center justify-center text-center px-8">
-        <div className="w-24 h-24 bg-brand-cream rounded-full flex items-center justify-center mb-8">
-          <ShoppingBag size={40} className="text-slate-300" />
-        </div>
-        <h2 className="text-4xl font-serif text-brand-brown mb-4">Your collection is empty</h2>
-        <p className="text-slate-500 mb-8 max-w-sm">Add some of our precision instruments to your ritual before checking out.</p>
-        <Link 
-          to="/"
-          className="bg-brand-brown text-white px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-black transition-all shadow-xl active:scale-95"
-        >
-          Explore Collection
-        </Link>
-      </div>
-    );
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -69,7 +50,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     try {
       // 1. Create order record in Firestore
-      await createOrder({
+      const order = await createOrder({
         userId: user.uid,
         customerEmail: formData.email,
         customerName: `${formData.firstName} ${formData.lastName}`,
@@ -82,22 +63,18 @@ export default function CheckoutPage() {
           image: item.image
         })),
         totalAmount: totalPrice,
-        status: 'pending' // Set to pending until payment is actually done via paypal.me
+        status: 'pending'
       });
       
-      // 2. Redirect to PayPal
-      const paypalUrl = `https://paypal.me/janiepastrana/${totalPrice.toFixed(2)}`;
-      
-      // We'll show a brief success state then redirect
-      setIsSuccess(true);
+      // 2. Clear cart and move to success page
       clearCart();
+      navigate('/purchase-received', { 
+        state: { 
+          totalPrice, 
+          orderId: order?.id || 'RITUAL-' + Math.random().toString(36).substr(2, 9).toUpperCase() 
+        } 
+      });
       
-      // Auto-redirect after a short delay
-      setTimeout(() => {
-        window.location.href = paypalUrl;
-      }, 3000);
-      
-      window.scrollTo(0, 0);
     } catch (error) {
       console.error('Checkout error:', error);
       alert('Something went wrong during checkout. Please try again.');
@@ -106,37 +83,20 @@ export default function CheckoutPage() {
     }
   };
 
-  if (isSuccess) {
+  if (cart.length === 0) {
     return (
-      <div className="pt-32 min-h-screen bg-white">
-        <div className="container mx-auto px-8 max-w-2xl text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="space-y-8"
-          >
-            <div className="w-24 h-24 bg-brand-cream text-brand-gold rounded-full flex items-center justify-center mx-auto mb-12 shadow-inner">
-              <Loader2 size={48} className="animate-spin" />
-            </div>
-            <div className="space-y-4">
-              <h1 className="text-6xl font-serif text-brand-brown">Redirecting for Payment</h1>
-              <p className="text-xl text-slate-500 font-light">
-                Your order is secured. We're now redirecting you to <span className="font-bold text-brand-brown">PayPal</span> to finalize your payment ritual.
-              </p>
-            </div>
-            
-            <div className="p-10 bg-slate-50 rounded-[48px] border border-slate-100 flex flex-col items-center gap-6">
-              <p className="text-sm text-slate-400">If you aren't redirected within a few seconds, click the button below:</p>
-              <a 
-                href={`https://paypal.me/janiepastrana/${totalPrice.toFixed(2)}`}
-                className="inline-flex items-center gap-3 bg-[#0070ba] text-white px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-[#003087] transition-all shadow-xl active:scale-95"
-              >
-                Continue to PayPal
-                <ExternalLink size={16} />
-              </a>
-            </div>
-          </motion.div>
+      <div className="pt-32 min-h-screen bg-white flex flex-col items-center justify-center text-center px-8">
+        <div className="w-24 h-24 bg-brand-cream rounded-full flex items-center justify-center mb-8">
+          <ShoppingBag size={40} className="text-slate-300" />
         </div>
+        <h2 className="text-4xl font-serif text-brand-brown mb-4">Your collection is empty</h2>
+        <p className="text-slate-500 mb-8 max-w-sm">Add some of our precision instruments to your ritual before checking out.</p>
+        <Link 
+          to="/"
+          className="bg-brand-brown text-white px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-black transition-all shadow-xl active:scale-95"
+        >
+          Explore Collection
+        </Link>
       </div>
     );
   }

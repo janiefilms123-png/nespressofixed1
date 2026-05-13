@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import ProductPage from './pages/ProductPage';
 import CheckoutPage from './pages/CheckoutPage';
 import PersonalDetailsPage from './pages/PersonalDetailsPage';
+import PurchaseReceivedPage from './pages/PurchaseReceivedPage';
 import Footer from './components/Footer';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -36,6 +37,7 @@ export default function App() {
                 <Route path="/product/:id" element={<ProductPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/profile" element={<PersonalDetailsPage />} />
+                <Route path="/purchase-received" element={<PurchaseReceivedPage />} />
               </Routes>
             </main>
             <Footer />
