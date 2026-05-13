@@ -5,18 +5,41 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, User, Settings, Package, Heart, LogIn, ArrowRight, Info, LogOut } from 'lucide-react';
+import { X, User, Settings, Package, Heart, LogIn, ArrowRight, Info, LogOut, Mail, Phone, ShieldCheck, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
 interface ProfileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+type AuthMode = 'selection' | 'email' | 'phone' | 'anonymous';
+
 export default function ProfileDrawer({ isOpen, onClose }: ProfileDrawerProps) {
-  const { user, signIn, logOut, loading } = useAuth();
+  const { 
+    user, 
+    signIn, 
+    signInWithEmail, 
+    signUpWithEmail, 
+    signInAnonymously, 
+    signInWithPhone, 
+    logOut, 
+    loading 
+  } = useAuth();
+  
   const [showToast, setShowToast] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode>('selection');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  
   const navigate = useNavigate();
 
   const handleLinkClick = (label: string, href?: string) => {
@@ -28,14 +51,86 @@ export default function ProfileDrawer({ isOpen, onClose }: ProfileDrawerProps) {
     }
   };
 
-  const handleSignIn = async () => {
+  const onSuccess = () => {
+    onClose();
+    navigate('/profile');
+    resetAuth();
+  };
+
+  const resetAuth = () => {
+    setAuthMode('selection');
+    setEmail('');
+    setPassword('');
+    setPhoneNumber('');
+    setVerificationCode('');
+    setConfirmationResult(null);
+    setAuthError(null);
+  };
+
+  const handleGoogleSignIn = async () => {
     try {
       await signIn();
-      // If we got here, sign in was successful (or at least popup completed)
-      onClose();
-      navigate('/profile');
-    } catch (error) {
-      console.error("Sign in failed:", error);
+      onSuccess();
+    } catch (error: any) {
+      if (error.code === 'auth/popup-closed-by-user') return;
+      setAuthError(error.message);
+    }
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      if (isSignUp) {
+        await signUpWithEmail(email, password);
+      } else {
+        await signInWithEmail(email, password);
+      }
+      onSuccess();
+    } catch (error: any) {
+      setAuthError(error.message);
+    }
+  };
+
+  const handleAnonymousSignIn = async () => {
+    setAuthError(null);
+    try {
+      await signInAnonymously();
+      onSuccess();
+    } catch (error: any) {
+      setAuthError(error.message);
+    }
+  };
+
+  const setupRecaptcha = () => {
+    if (!(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+      });
+    }
+    return (window as any).recaptchaVerifier;
+  };
+
+  const handlePhoneSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      const verifier = setupRecaptcha();
+      const result = await signInWithPhone(phoneNumber, verifier);
+      setConfirmationResult(result);
+    } catch (error: any) {
+      setAuthError(error.message);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      await confirmationResult?.confirm(verificationCode);
+      onSuccess();
+    } catch (error: any) {
+      setAuthError(error.message);
     }
   };
 
@@ -80,15 +175,25 @@ export default function ProfileDrawer({ isOpen, onClose }: ProfileDrawerProps) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed top-0 right-0 h-full w-full max-w-sm bg-white z-[101] shadow-2xl flex flex-col pt-10"
+            className="fixed top-0 right-0 h-full w-full max-w-sm bg-white z-[101] shadow-2xl flex flex-col pt-10 overflow-y-auto"
           >
-            <div className="px-8 flex justify-end">
+            <div className="px-8 flex justify-between items-center">
+              {authMode !== 'selection' ? (
+                <button 
+                  onClick={() => resetAuth()}
+                  className="flex items-center gap-2 text-slate-400 hover:text-brand-brown transition-colors text-xs font-bold uppercase tracking-widest"
+                >
+                  <ChevronLeft size={16} />
+                  Back
+                </button>
+              ) : <div />}
               <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                 <X size={24} />
               </button>
             </div>
 
-            <div className="flex-1 px-8 py-10 space-y-12">
+            <div className="flex-1 px-8 py-8 space-y-10">
+              {/* Header */}
               <div className="space-y-6">
                 <div className="w-20 h-20 bg-brand-cream rounded-full flex items-center justify-center border-2 border-brand-gold/20 overflow-hidden">
                   {user?.photoURL ? (
@@ -99,26 +204,138 @@ export default function ProfileDrawer({ isOpen, onClose }: ProfileDrawerProps) {
                 </div>
                 <div>
                   <h2 className="text-3xl font-serif text-brand-brown mb-1">
-                    {loading ? '...' : user ? `Hello, ${user.displayName?.split(' ')[0]}` : 'Welcome back'}
+                    {loading ? '...' : (user ? (user.isAnonymous ? 'Guest Member' : `Hello, ${user.displayName?.split(' ')[0] || 'Member'}`) : 'Join the Club')}
                   </h2>
                   <p className="text-slate-500 text-sm">
-                    {user ? user.email : 'Join the Future Café Club for exclusive benefits.'}
+                    {user ? (user.isAnonymous ? 'Upgrade your account for permanent access.' : user.email || user.phoneNumber) : 'Select your preferred way to authenticate.'}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {authError && (
+                <div className="p-4 bg-red-50 text-red-500 text-xs rounded-xl border border-red-100">
+                  {authError}
+                </div>
+              )}
+
+              {/* Recaptcha Container */}
+              <div id="recaptcha-container"></div>
+
+              <div className="space-y-4">
                 {!user ? (
-                  <button 
-                    onClick={handleSignIn}
-                    className="w-full flex items-center justify-between p-4 bg-brand-cream rounded-2xl transition-all group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <LogIn size={20} className="text-brand-gold" />
-                      <span className="font-bold text-brand-brown">Sign In with Google</span>
-                    </div>
-                    <ArrowRight size={16} className="text-brand-gold" />
-                  </button>
+                  <>
+                    {authMode === 'selection' && (
+                      <div className="space-y-3">
+                        <AuthButton 
+                          icon={LogIn} 
+                          label="Sign In with Google" 
+                          onClick={handleGoogleSignIn} 
+                          primary 
+                        />
+                        <AuthButton 
+                          icon={Mail} 
+                          label="Email / Password" 
+                          onClick={() => setAuthMode('email')} 
+                        />
+                        <AuthButton 
+                          icon={Phone} 
+                          label="Phone Number" 
+                          onClick={() => setAuthMode('phone')} 
+                        />
+                        <AuthButton 
+                          icon={ShieldCheck} 
+                          label="Continue as Guest" 
+                          onClick={handleAnonymousSignIn} 
+                        />
+                      </div>
+                    )}
+
+                    {authMode === 'email' && (
+                      <form onSubmit={handleEmailAuth} className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Email Address</label>
+                          <input 
+                            type="email" 
+                            required 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-gold/20 outline-none transition-all"
+                            placeholder="your@email.com"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Password</label>
+                          <input 
+                            type="password" 
+                            required 
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-gold/20 outline-none transition-all"
+                            placeholder="••••••••"
+                          />
+                        </div>
+                        <button 
+                          type="submit"
+                          className="luxury-button w-full mt-4"
+                        >
+                          {isSignUp ? 'Create Ritual Account' : 'Sign In to Club'}
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => setIsSignUp(!isSignUp)}
+                          className="w-full text-[10px] font-bold uppercase tracking-widest text-brand-gold mt-2 hover:underline"
+                        >
+                          {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+                        </button>
+                      </form>
+                    )}
+
+                    {authMode === 'phone' && (
+                      <div className="space-y-4">
+                        {!confirmationResult ? (
+                          <form onSubmit={handlePhoneSignIn} className="space-y-4">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Phone Number</label>
+                              <input 
+                                type="tel" 
+                                required 
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-gold/20 outline-none transition-all"
+                                placeholder="+1 123 456 7890"
+                              />
+                            </div>
+                            <button 
+                              type="submit"
+                              className="luxury-button w-full mt-4"
+                            >
+                              Send Verification Code
+                            </button>
+                          </form>
+                        ) : (
+                          <form onSubmit={handleVerifyCode} className="space-y-4">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Verification Code</label>
+                              <input 
+                                type="text" 
+                                required 
+                                value={verificationCode}
+                                onChange={(e) => setVerificationCode(e.target.value)}
+                                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-gold/20 outline-none transition-all"
+                                placeholder="123456"
+                              />
+                            </div>
+                            <button 
+                              type="submit"
+                              className="luxury-button w-full mt-4"
+                            >
+                              Confirm Code
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <>
                     {[
@@ -178,5 +395,20 @@ export default function ProfileDrawer({ isOpen, onClose }: ProfileDrawerProps) {
         </>
       )}
     </AnimatePresence>
+  );
+}
+
+function AuthButton({ icon: Icon, label, onClick, primary = false }: { icon: any, label: string, onClick: () => void, primary?: boolean }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all group ${primary ? 'bg-brand-cream border border-brand-gold/10' : 'hover:bg-slate-50'}`}
+    >
+      <div className="flex items-center gap-4">
+        <Icon size={20} className="text-brand-gold" />
+        <span className={`font-bold ${primary ? 'text-brand-brown' : 'text-slate-600'}`}>{label}</span>
+      </div>
+      <ArrowRight size={16} className="text-brand-gold" />
+    </button>
   );
 }

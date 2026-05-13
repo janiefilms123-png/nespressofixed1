@@ -12,8 +12,8 @@ const firebaseConfig = {
   projectId: "futurecafe2-6b501",
   storageBucket: "futurecafe2-6b501.firebasestorage.app",
   messagingSenderId: "890212866826",
-  appId: "1:890212866826:web:df86565e7159be8f4e78f3",
-  measurementId: "G-HWDFWLM77B"
+  appId: "1:890212866826:web:24325b02700df9bb4e78f3",
+  measurementId: "G-D60GS6N4EB"
 };
 
 const app = initializeApp(firebaseConfig);

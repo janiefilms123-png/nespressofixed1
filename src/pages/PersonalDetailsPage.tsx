@@ -56,8 +56,10 @@ export default function PersonalDetailsPage() {
                 )}
               </div>
               <div>
-                <h2 className="text-2xl font-serif text-brand-brown">{user.displayName}</h2>
-                <p className="text-brand-gold text-xs font-bold uppercase tracking-widest mt-1">Founding Member</p>
+                <h2 className="text-2xl font-serif text-brand-brown">{user.displayName || 'Club Member'}</h2>
+                <p className="text-brand-gold text-xs font-bold uppercase tracking-widest mt-1">
+                  {user.isAnonymous ? 'Guest Member' : 'Founding Member'}
+                </p>
               </div>
               
               <div className="w-full h-px bg-slate-100" />
@@ -83,11 +85,11 @@ export default function PersonalDetailsPage() {
               <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-8 pb-4 border-b border-slate-50">Profile Information</h3>
               
               <div className="space-y-8">
-                <DetailRow icon={Mail} label="Email Address" value={user.email || 'Not provided'} />
-                <DetailRow icon={Phone} label="Phone Number" value="+1 (555) 000-0000" isPlaceholder />
+                <DetailRow icon={Mail} label="Email Address" value={user.email || 'Not connected'} isPlaceholder={!user.email} />
+                <DetailRow icon={Phone} label="Phone Number" value={user.phoneNumber || 'Not connected'} isPlaceholder={!user.phoneNumber} />
                 <DetailRow icon={MapPin} label="Default Shipping" value="123 Luxury Lane, Espresso Valley, CA" isPlaceholder />
                 <DetailRow icon={Calendar} label="Member Since" value="May 2026" />
-                <DetailRow icon={Shield} label="Account Security" value="Google Authenticated" />
+                <DetailRow icon={Shield} label="Account Security" value={user.isAnonymous ? 'Anonymous Session' : 'Secured Account'} />
               </div>
               
               <div className="mt-12 pt-8 border-t border-slate-50">

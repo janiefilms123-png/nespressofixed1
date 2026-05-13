@@ -15,6 +15,7 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { handleFirestoreError, OperationType } from '../lib/firestoreUtils';
 
 export interface Review {
   id: string;
@@ -38,24 +39,37 @@ export function subscribeToReviews(callback: (reviews: Review[]) => void, produc
     );
   }
   
+  const path = 'reviews';
   return onSnapshot(reviewsQuery, (snapshot) => {
     const reviews = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as Review[];
     callback(reviews);
+  }, (error) => {
+    handleFirestoreError(error, OperationType.GET, path);
   });
 }
 
 export async function addReview(review: Omit<Review, 'id' | 'createdAt'>) {
-  return addDoc(collection(db, 'reviews'), {
-    ...review,
-    createdAt: serverTimestamp()
-  });
+  const path = 'reviews';
+  try {
+    return await addDoc(collection(db, 'reviews'), {
+      ...review,
+      createdAt: serverTimestamp()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
 }
 
 export async function deleteReview(reviewId: string) {
-  return deleteDoc(doc(db, 'reviews', reviewId));
+  const path = `reviews/${reviewId}`;
+  try {
+    return await deleteDoc(doc(db, 'reviews', reviewId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
 }
 
 export async function seedReviews(currentUserId: string) {

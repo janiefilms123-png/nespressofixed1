@@ -9,7 +9,13 @@ import {
   onAuthStateChanged, 
   signInWithPopup, 
   GoogleAuthProvider, 
-  signOut 
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInAnonymously as firebaseSignInAnonymously,
+  signInWithPhoneNumber,
+  RecaptchaVerifier,
+  ConfirmationResult
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
@@ -17,6 +23,10 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signInAnonymously: () => Promise<void>;
+  signInWithPhone: (phoneNumber: string, appVerifier: RecaptchaVerifier) => Promise<ConfirmationResult>;
   logOut: () => Promise<void>;
 }
 
@@ -41,9 +51,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       if (error.code === 'auth/popup-closed-by-user') {
         console.log('Sign-in popup closed by user');
-        throw error; // Throw so caller knows it wasn't a successful login
+        throw error;
       }
       console.error('Error signing in:', error);
+      throw error;
+    }
+  };
+
+  const signInWithEmail = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('Error signing in with email:', error);
+      throw error;
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string) => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('Error signing up with email:', error);
+      throw error;
+    }
+  };
+
+  const signInAnonymously = async () => {
+    try {
+      await firebaseSignInAnonymously(auth);
+    } catch (error) {
+      console.error('Error signing in anonymously:', error);
+      throw error;
+    }
+  };
+
+  const signInWithPhone = async (phoneNumber: string, appVerifier: RecaptchaVerifier) => {
+    try {
+      return await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+    } catch (error) {
+      console.error('Error signing in with phone:', error);
       throw error;
     }
   };
@@ -57,7 +103,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, logOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      signIn, 
+      signInWithEmail, 
+      signUpWithEmail, 
+      signInAnonymously, 
+      signInWithPhone, 
+      logOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );

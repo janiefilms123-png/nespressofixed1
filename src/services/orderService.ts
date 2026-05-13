@@ -5,6 +5,7 @@
 
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { handleFirestoreError, OperationType } from '../lib/firestoreUtils';
 
 export interface OrderItem {
   id: string;
@@ -25,9 +26,14 @@ export interface OrderData {
 }
 
 export async function createOrder(order: OrderData) {
-  const ordersRef = collection(db, 'orders');
-  return addDoc(ordersRef, {
-    ...order,
-    createdAt: serverTimestamp(),
-  });
+  const path = 'orders';
+  const ordersRef = collection(db, path);
+  try {
+    return await addDoc(ordersRef, {
+      ...order,
+      createdAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
 }

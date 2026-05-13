@@ -1,10 +1,9 @@
 {
-  "projectId": "gen-lang-client-0722837643",
-  "appId": "1:968541713175:web:0daf4686b2ffba60053d52",
-  "apiKey": "AIzaSyCNYw99QwMiodd_eG7UgWxH--DAKPAzQUE",
-  "authDomain": "gen-lang-client-0722837643.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-cef07b77-8fb0-4eb5-9e9c-1be6e01ab9f5",
-  "storageBucket": "gen-lang-client-0722837643.firebasestorage.app",
-  "messagingSenderId": "968541713175",
-  "measurementId": ""
+  "projectId": "futurecafe2-6b501",
+  "appId": "1:890212866826:web:24325b02700df9bb4e78f3",
+  "apiKey": "AIzaSyAVCHUL6NIfKSOiqhYueo7TzcpTeggb_0c",
+  "authDomain": "futurecafe2-6b501.firebaseapp.com",
+  "storageBucket": "futurecafe2-6b501.firebasestorage.app",
+  "messagingSenderId": "890212866826",
+  "measurementId": "G-D60GS6N4EB"
 }
