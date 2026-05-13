@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Truck, 
@@ -23,6 +23,7 @@ export default function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -62,7 +63,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      await signIn();
+      navigate('/login', { state: { from: location } });
       return;
     }
 
