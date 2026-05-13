@@ -6,8 +6,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, User, Settings, Package, Heart, LogIn, ArrowRight, Info, LogOut } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface ProfileDrawerProps {
   isOpen: boolean;
@@ -17,9 +17,26 @@ interface ProfileDrawerProps {
 export default function ProfileDrawer({ isOpen, onClose }: ProfileDrawerProps) {
   const { user, signIn, logOut, loading } = useAuth();
   const [showToast, setShowToast] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const handleLinkClick = (label: string) => {
-    setShowToast(label);
+  const handleLinkClick = (label: string, href?: string) => {
+    if (href) {
+      onClose();
+      navigate(href);
+    } else {
+      setShowToast(label);
+    }
+  };
+
+  const handleSignIn = async () => {
+    try {
+      await signIn();
+      // If we got here, sign in was successful (or at least popup completed)
+      onClose();
+      navigate('/profile');
+    } catch (error) {
+      console.error("Sign in failed:", error);
+    }
   };
 
   useEffect(() => {
@@ -92,27 +109,27 @@ export default function ProfileDrawer({ isOpen, onClose }: ProfileDrawerProps) {
 
               <div className="space-y-2">
                 {!user ? (
-                  <Link 
-                    to="/login"
-                    onClick={onClose}
+                  <button 
+                    onClick={handleSignIn}
                     className="w-full flex items-center justify-between p-4 bg-brand-cream rounded-2xl transition-all group"
                   >
                     <div className="flex items-center gap-4">
                       <LogIn size={20} className="text-brand-gold" />
-                      <span className="font-bold text-brand-brown">Sign In to Your Ritual</span>
+                      <span className="font-bold text-brand-brown">Sign In with Google</span>
                     </div>
                     <ArrowRight size={16} className="text-brand-gold" />
-                  </Link>
+                  </button>
                 ) : (
                   <>
                     {[
+                      { icon: User, label: 'Personal Details', href: '/profile' },
                       { icon: Package, label: 'Track My Order' },
                       { icon: Heart, label: 'My Favorites Bucket' },
                       { icon: Settings, label: 'Machine Settings' },
                     ].map((item, idx) => (
                       <button 
                         key={idx}
-                        onClick={() => handleLinkClick(item.label)}
+                        onClick={() => handleLinkClick(item.label, item.href)}
                         className="w-full flex items-center justify-between p-4 hover:bg-brand-cream rounded-2xl transition-all group"
                       >
                         <div className="flex items-center gap-4">

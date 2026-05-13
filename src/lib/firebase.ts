@@ -6,11 +6,18 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
-// @ts-ignore
-import firebaseConfig from '../../firebase-applet-config.json';
+const firebaseConfig = {
+  apiKey: "AIzaSyAVCHUL6NIfKSOiqhYueo7TzcpTeggb_0c",
+  authDomain: "futurecafe2-6b501.firebaseapp.com",
+  projectId: "futurecafe2-6b501",
+  storageBucket: "futurecafe2-6b501.firebasestorage.app",
+  messagingSenderId: "890212866826",
+  appId: "1:890212866826:web:df86565e7159be8f4e78f3",
+  measurementId: "G-HWDFWLM77B"
+};
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 
 // Connectivity check as per instructions

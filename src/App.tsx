@@ -9,7 +9,7 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import ProductPage from './pages/ProductPage';
 import CheckoutPage from './pages/CheckoutPage';
-import LoginPage from './pages/LoginPage';
+import PersonalDetailsPage from './pages/PersonalDetailsPage';
 import Footer from './components/Footer';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -35,7 +35,7 @@ export default function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/product/:id" element={<ProductPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/login" element={<LoginPage />} />
+                <Route path="/profile" element={<PersonalDetailsPage />} />
               </Routes>
             </main>
             <Footer />
